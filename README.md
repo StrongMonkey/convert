@@ -1,19 +1,14 @@
 convert
 ========
 
-A microservice that does micro things.
+Converting library between rancher api spec, docker and containerd.
 
 ## Building
 
 `make`
 
-
-## Running
-
-`./bin/convert`
-
 ## License
-Copyright (c) 2014-2016 [Rancher Labs, Inc.](http://rancher.com)
+Copyright (c) 2014-2017 [Rancher Labs, Inc.](http://rancher.com)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
