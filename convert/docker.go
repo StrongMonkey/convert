@@ -1,21 +1,20 @@
 package convert
 
 import (
-	v3 "github.com/rancher/go-rancher/v3"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/go-connections/nat"
 	"fmt"
 	"strconv"
 	"strings"
-	"github.com/Sirupsen/logrus"
-	"github.com/docker/docker/api/types/blkiodev"
 	"time"
+
+	"github.com/docker/docker/api/types/blkiodev"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
+	v3 "github.com/rancher/go-rancher/v3"
 )
 
 type Reference struct {
 	VolumeFromContainers map[string]v3.Container
-	DockerRoot string
-	DefaultDisk string
+	DockerRoot           string
 }
 
 // RancherToDockerConfigs take a v3.Container and a list of metadata referenced by itself, returns docker.Config and docker.HostConfig
@@ -71,13 +70,12 @@ func RancherToDockerConfigs(containerSpec v3.Container, reference Reference) (co
 	hostConfig.ExtraHosts = containerSpec.ExtraHosts
 	hostConfig.PidMode = container.PidMode(containerSpec.PidMode)
 
-
 	//special convert
 	setupPorts(config, hostConfig, containerSpec)
 	setupVolume(config, hostConfig, containerSpec, reference)
 	setupDevice(hostConfig, containerSpec)
 	setupLogConfig(hostConfig, containerSpec)
-	setupDeviceOptions(hostConfig, containerSpec, reference)
+	setupDeviceOptions(hostConfig, containerSpec)
 	setupHeathConfig(config, containerSpec)
 
 	return *config, *hostConfig
@@ -91,7 +89,7 @@ func convertEnv(envs map[string]interface{}) []string {
 	return r
 }
 
-func setupPorts(config *container.Config, hostConfig *container.HostConfig, containerSpec v3.Container)  {
+func setupPorts(config *container.Config, hostConfig *container.HostConfig, containerSpec v3.Container) {
 	//ports := []types.Port{}
 	exposedPorts := map[nat.Port]struct{}{}
 	bindings := nat.PortMap{}
@@ -205,7 +203,7 @@ type deviceOptions struct {
 	WriteBps  uint64
 }
 
-func setupDeviceOptions(hostConfig *container.HostConfig, spec v3.Container, reference Reference) error {
+func setupDeviceOptions(hostConfig *container.HostConfig, spec v3.Container) error {
 	devOptions := spec.BlkioDeviceOptions
 
 	blkioWeightDevice := []*blkiodev.WeightDevice{}
@@ -215,14 +213,6 @@ func setupDeviceOptions(hostConfig *container.HostConfig, spec v3.Container, ref
 	blkioDeviceWriteIOps := []*blkiodev.ThrottleDevice{}
 
 	for dev, value := range devOptions {
-		if dev == "DEFAULT_DISK" {
-			// ignore this error because if we can't find the device we just skip that device
-			dev = reference.DefaultDisk
-			if dev == "" {
-				logrus.Warn(fmt.Sprintf("Couldn't find default device. Not setting device options: %v", value))
-				continue
-			}
-		}
 		option := deviceOptions{}
 		if err := Unmarshalling(value, &option); err != nil {
 			continue
